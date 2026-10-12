@@ -1,0 +1,8 @@
+{
+  "name": "otoha-slides-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Scripts of the slides skill. They run on the system's Node; the skill brings no runtime and no dependencies.",
+  "engines": { "node": ">=20" },
+  "dependencies": {}
+}
