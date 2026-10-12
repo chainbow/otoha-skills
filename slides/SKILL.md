@@ -38,7 +38,7 @@ A deck is a folder. `deck.json` holds the title, the order of the slides and the
 
    `id` says what the slide is about, in lowercase English words with hyphens, never a number. `theme` is optional (colours and font; see `references/design-tokens.md`); `"mode": "dark"` gives dark slides, but not when the same content also goes to PowerPoint. `section` on a slide names the part of the talk it begins; it is shown small at the foot of that slide and the ones after it.
 4. **Write each slide** to `slides/<id>.html` with workspace_write. One `<section class="slide …" id="<id>">` per file; the layouts, with their HTML, are in `references/layouts.md`: read it before writing. Every piece of text carries a `data-edit="name"` that is unique in its slide, so the user can retype it in the preview.
-5. **Build.** Run `scripts/build.mjs` with skill_run, arguments `build 发布会演示`. It checks the deck and writes `index.html`. It lists every problem with the slide's id and the line; fix each in its slide file and run it again. Warnings (more than 5 bullets, no title, a pale accent) are worth fixing but do not stop the build.
+5. **Build.** Call skill_run with skill `slides`, script `scripts/build.mjs` (the whole path, `scripts/` included) and arguments `["build", "发布会演示"]`. It checks the deck and writes `index.html`. It lists every problem with the slide's id and the line; fix each in its slide file and run it again. Warnings (more than 5 bullets, no title, a pale accent) are worth fixing but do not stop the build.
 6. **Look at it.** Run page_check on `发布会演示/index.html`, fix what it reports (errors, text running off a slide), and build again after each fix.
 7. **Tell the user** in a few plain lines what was made, the assumptions you took (audience, length, any example numbers that need real ones), and that they can present it full screen and export it as PDF from the preview.
 
@@ -51,7 +51,7 @@ The user's feedback names a slide ("第 3 页", "the pricing slide"). Find its i
 ## Export
 
 - **PDF**: the preview has the export button; it is an exact copy of the slides as shown, one per page. Nothing to run.
-- **PowerPoint (editable)**: build the deck, run `scripts/to-pptx-outline.mjs` with skill_run (argument: the deck folder), then follow the pptx skill with the outline it wrote. The PowerPoint keeps the content but has the pptx skill's own look, and later edits in PowerPoint do not come back. `references/powerpoint.md` has the steps and how the two differ; say it in a sentence when the user asks for both.
+- **PowerPoint (editable)**: build the deck, call skill_run with skill `slides`, script `scripts/to-pptx-outline.mjs` and the deck folder as the only argument, then follow the pptx skill with the outline it wrote. The PowerPoint keeps the content but has the pptx skill's own look, and later edits in PowerPoint do not come back. `references/powerpoint.md` has the steps and how the two differ; say it in a sentence when the user asks for both.
 
 ## When something fails
 
