@@ -1,0 +1,135 @@
+/* Base stylesheet for design artboards. Every value comes from tokens.css; the fallbacks below only keep an
+   unfinished design readable. Load order in an artboard: base.css, then tokens.css. */
+
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f4f4f5;
+  --color-text: #18181b;
+  --color-muted: #52525b;
+  --color-line: #d4d4d8;
+  --color-primary: #3730a3;
+  --color-on-primary: #ffffff;
+  --color-accent: #d97706;
+
+  --font-display: "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Type scale, in px of the artboard. tokens.css sets these for the artboard's size. */
+  --text-caption: 12px;
+  --text-small: 14px;
+  --text-body: 16px;
+  --text-lead: 20px;
+  --text-h3: 24px;
+  --text-h2: 32px;
+  --text-h1: 44px;
+  --text-display: 64px;
+
+  --leading-tight: 1.15;
+  --leading-normal: 1.5;
+  --tracking-display: 0;
+
+  /* Spacing, a steady ladder. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --margin: 48px; /* the outer margin of the artboard */
+
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 24px;
+  --radius-full: 999px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #e4e4e7;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, p, ul, ol, figure, blockquote { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+img, svg, video { display: block; max-width: 100%; }
+button, input { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+/* Text may break inside long words and URLs instead of overflowing. */
+h1, h2, h3, h4, p, li, span, a, figcaption, button, label { overflow-wrap: anywhere; }
+
+/* The artboard: a fixed-size surface. Set its size on the element: style="--w:1080px;--h:1440px".
+   check.js scales it to fit the preview (zoom); nothing inside it should depend on the window. */
+.artboard {
+  position: relative;
+  width: var(--w, 1080px);
+  height: var(--h, 1440px);
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  zoom: var(--fit, 1);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 8px 32px rgb(0 0 0 / 0.12);
+}
+
+@media print {
+  body { background: none; display: block; min-height: 0; }
+  .artboard { zoom: 1; box-shadow: none; }
+}
+
+/* Type roles. Use these classes, or the same variables, instead of loose pixel sizes. */
+.t-display { font-family: var(--font-display); font-size: var(--text-display); line-height: var(--leading-tight); letter-spacing: var(--tracking-display); font-weight: 700; }
+.t-h1 { font-family: var(--font-display); font-size: var(--text-h1); line-height: var(--leading-tight); letter-spacing: var(--tracking-display); font-weight: 700; }
+.t-h2 { font-family: var(--font-display); font-size: var(--text-h2); line-height: 1.25; font-weight: 700; }
+.t-h3 { font-family: var(--font-display); font-size: var(--text-h3); line-height: 1.3; font-weight: 600; }
+.t-lead { font-size: var(--text-lead); line-height: 1.45; }
+.t-body { font-size: var(--text-body); line-height: var(--leading-normal); }
+.t-small { font-size: var(--text-small); line-height: 1.45; }
+.t-caption { font-size: var(--text-caption); line-height: 1.4; color: var(--color-muted); }
+.t-muted { color: var(--color-muted); }
+.t-center { text-align: center; }
+.t-eyebrow { font-size: var(--text-small); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary); }
+
+/* Layout helpers. Position by hand only when a design needs it. */
+.fill { position: absolute; inset: 0; }
+.pad { padding: var(--margin); }
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.grow { flex: 1 1 0; min-width: 0; }
+.gap-1 { gap: var(--space-1); } .gap-2 { gap: var(--space-2); } .gap-3 { gap: var(--space-3); } .gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); } .gap-6 { gap: var(--space-6); } .gap-7 { gap: var(--space-7); } .gap-8 { gap: var(--space-8); }
+.grid { display: grid; }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* Surfaces. */
+.card { background: var(--color-surface); border-radius: var(--radius-m); padding: var(--space-5); }
+.card-line { border: 1px solid var(--color-line); border-radius: var(--radius-m); padding: var(--space-5); }
+.on-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.rule { height: 1px; background: var(--color-line); border: 0; }
+.pill { display: inline-flex; align-items: center; padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); background: var(--color-surface); font-size: var(--text-small); }
+.button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 var(--space-5); border-radius: var(--radius-full); background: var(--color-primary); color: var(--color-on-primary); font-weight: 600; }
+
+/* Diagrams (see references/diagrams.md). */
+.diagram { width: 100%; height: 100%; }
+.diagram text { font-family: var(--font-body); fill: var(--color-text); }
+.diagram .node { fill: var(--color-surface); stroke: var(--color-line); stroke-width: 1.5; }
+.diagram .node-primary { fill: var(--color-primary); stroke: none; }
+.diagram .node-primary text, .diagram text.on-primary { fill: var(--color-on-primary); }
+.diagram .link { fill: none; stroke: var(--color-muted); stroke-width: 2; }
+.diagram .link-primary { fill: none; stroke: var(--color-primary); stroke-width: 3; }
+.diagram .arrow-head { fill: var(--color-muted); }
