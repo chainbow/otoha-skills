@@ -141,7 +141,8 @@ function checkSlide(entry, source, deckDir, errors, warnings) {
     return null;
   }
   if (!(section.attrs.class || '').split(/\s+/).includes('slide')) fail('the <section> needs class="slide" (for example class="slide cover").');
-  if (section.attrs.id !== id) fail(`the <section> has id="${section.attrs.id ?? ''}" but deck.json lists this slide as id="${id}"; they must match.`);
+  if (section.attrs.id === undefined) fail(`the <section> has no id; start the file with <section class="slide" id="${id}"> (the id deck.json lists).`);
+  else if (section.attrs.id !== id) fail(`the <section> has id="${section.attrs.id}" but deck.json lists this slide as id="${id}"; they must match.`);
 
   const seen = new Map();
   const classes = (section.attrs.class || '').split(/\s+/);

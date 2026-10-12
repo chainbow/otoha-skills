@@ -165,6 +165,11 @@ test('the section id must match the id in deck.json', () => {
   assert.ok(has(checkDeck(deck), /why-now: .*id="other".*id="why-now"/));
 });
 
+test('a section without an id is told the exact opening tag to write', () => {
+  const { deck } = withDeck((f) => { f['slides/why-now.html'] = '<section class="slide"><h2 data-edit="t">x</h2></section>'; });
+  assert.ok(has(checkDeck(deck), /why-now: the <section> has no id; start the file with <section class="slide" id="why-now">/));
+});
+
 test('the file holds exactly one section with class slide', () => {
   const two = withDeck((f) => { f['slides/why-now.html'] = bullets('why-now') + bullets('again'); });
   assert.ok(has(checkDeck(two.deck), /why-now: .*exactly one/));
