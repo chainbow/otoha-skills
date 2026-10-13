@@ -8,22 +8,22 @@ allowed-tools: skill_read skill_copy workspace_read workspace_write page_check i
 A design is a folder. Each artboard (one poster, one screen, one diagram) is one HTML file of a fixed size; the colours, fonts and spacing are shared in one `tokens.css`. The app shows each artboard in the preview. Everything is plain files: no network, no libraries, no build step.
 
 ```
-设计/春季菜单海报/
+spring-menu-poster/
   tokens.css      colours, fonts, spacing, type sizes for this design
   poster.html     one artboard (more: home.html, detail.html …)
   images/         pictures, only if used
   lib/            base.css and check.js, copied from this skill
 ```
 
-Use the user's language for every word in the design and for the folder names, unless they ask otherwise. A new folder per design; never overwrite another design.
+Use the user's language for every word in the design and for the folder names, unless they ask otherwise. Name the folder short and concrete, in the language of the request, with no generic parent folder such as `design/` or `设计/`: an English request gets `spring-menu-poster`, a Chinese request gets `春季菜单海报`. A new folder per design; never overwrite another design.
 
 ## Steps
 
 1. **Ask only what changes the result**, in one short message, each question with your suggested answer: what it is for and where it will be seen, who looks at it, the size or format, the look (or a brand: colours, logo, mood), the words and facts it must contain. Skip what the request already says. If nobody can answer (a scheduled task) or the user says "just do it", decide, and tell them what you assumed. Questions to draw on: `references/questions.md`.
 2. **Read** `references/principles.md`, then the file for the kind of work: `sizes.md` always; `color-and-type.md` always; `diagrams.md` for infographics, flows and maps; `accessibility.md` for screens.
-3. **Set up**: skill_copy this skill's `assets` with `to` the whole path from the project root, e.g. `设计/春季菜单海报/lib` (not just `春季菜单海报/lib`). Check that the artboard files and `lib` end up in the same folder. Then write `tokens.css`: decide the colours and the fonts first, then the type sizes and spacing for the artboard's size.
+3. **Set up**: skill_copy this skill's `assets` with `to` the whole path from the project root, e.g. `spring-menu-poster/lib` (or `春季菜单海报/lib` for a Chinese request). Check that the artboard files and `lib` end up in the same folder. Then write `tokens.css`: decide the colours and the fonts first, then the type sizes and spacing for the artboard's size.
 4. **Write each artboard** with workspace_write, as below. One strong idea per artboard: a clear first thing to look at, then the rest in order.
-5. **Check** with page_check on every artboard. It loads the page and reports errors: text without `data-edit`, text outside or cut off, and warnings: low contrast, text too small, text on top of text. Look at the screenshot too: is the first thing you notice the right one, does the content fill the artboard from top to bottom (the closing line at the bottom, not floating in the middle), is anything uneven? Fix and check again until the report is clean: if it says `lib/check.js did not load` or `lib/base.css did not load`, `lib` is in the wrong place: fix that first. Checks are limited per message; fix everything you can see before the next one.
+5. **Check** with page_check on every artboard. It loads the page and reports errors: text without `data-edit`, text outside the artboard, text cut off or overflowing its box; and warnings: low contrast, text too small, text on top of text, empty space at the bottom or top. Look at the screenshot too: is the first thing you notice the right one, does the content fill the artboard from top to bottom (the closing line at the bottom, not floating in the middle), is anything uneven? **The work is not done until page_check reports nothing on every artboard: no errors and no warnings, overflow ones included.** Each report line starts with `design-check:` and names the elements (for example `text cut off or overflowing its box (1): footer`). If it names one, fix it and run page_check again; do not tell the user the design is finished while a line is left. If checks run out, say plainly which line is left. To fix overflow: shorten the text; reduce the font size (through a token in `tokens.css`); allow the text to wrap (remove `white-space:nowrap`, widen the box, or give it `flex:1; min-width:0`); reduce the padding, gaps or the number of rows above it; if the content is simply too much for the artboard, split it across two artboards. Never hide it with `overflow:hidden` or by moving it outside the artboard. If it says `lib/check.js did not load` or `lib/base.css did not load`, `lib` is in the wrong place: fix that first. Checks are limited per message; fix everything you can see before the next one.
 6. **Tell the user** in two or three plain sentences what you made, in which file, and what you assumed (size, look, wording you invented). Offer the next step in their words ("want the colours warmer?", "I can make the story size too"). See "Words for the user".
 
 ## An artboard
