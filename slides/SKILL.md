@@ -2,6 +2,7 @@
 name: slides
 description: Make a presentation as slides on a web page, one file per slide, with a consistent look, charts and speaker-ready layouts, that the app previews, presents full screen and exports to PDF; one slide can be changed without touching the others. Use when the user asks for slides, a deck, a presentation or 演示稿, or to change one slide of such a deck. For an editable PowerPoint file, hand the same content to the pptx skill.
 allowed-tools: skill_read skill_copy skill_run workspace_read workspace_write page_check file_open
+hands-off-to: pptx
 ---
 # Slides
 
@@ -53,7 +54,7 @@ The user's feedback names a slide ("第 3 页", "the pricing slide"). Find its i
 ## Export
 
 - **PDF**: the preview has the export button; it is an exact copy of the slides as shown, one per page. Nothing to run.
-- **PowerPoint (editable)**: build the deck, call skill_run with skill `slides`, script `scripts/to-pptx-outline.mjs` and the deck folder as the only argument, then follow the pptx skill with the outline it wrote. The PowerPoint keeps the content but has the pptx skill's own look, and later edits in PowerPoint do not come back. `references/powerpoint.md` has the steps and how the two differ; say it in a sentence when the user asks for both.
+- **PowerPoint (editable)**: build the deck, call skill_run with skill `slides`, script `scripts/to-pptx-outline.mjs` and the deck folder as the only argument, then follow the pptx skill with the outline it wrote. If the project does not have the pptx skill yet, find it with skill_find and add it with skill_add (this skill hands off to it, and asking for it is enough; the user is asked only if adding it needs their yes), read it with skill_read, and carry on; do not stop to ask the user to add it. The PowerPoint keeps the content but has the pptx skill's own look, and later edits in PowerPoint do not come back. `references/powerpoint.md` has the steps and how the two differ; say it in a sentence when the user asks for both.
 
 ## When something fails
 
