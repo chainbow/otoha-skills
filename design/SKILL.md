@@ -2,6 +2,7 @@
 name: design
 description: Design a poster, flyer, social image, app or web screen mockup, infographic, flow diagram or prototype as HTML pages in the project, previewed beside the conversation, with text the user can change. Use when the user asks for a visual design, 海报, 宣传图, 界面稿, 原型, 信息图, 示意图 or 流程图. Not for slide presentations (use the slides skill), editable PowerPoint (use the pptx skill) or a working website.
 allowed-tools: skill_read skill_copy workspace_read workspace_write page_check image_generate
+version: 1.0.0
 ---
 # Design
 

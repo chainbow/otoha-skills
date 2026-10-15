@@ -2,6 +2,7 @@
 name: promotion
 description: Plan and carry out the promotion of a product or app on social platforms: agree the goal, audience, platforms and schedule with the user, put a day-by-day plan on the board, and write and prepare each post for the user to publish. Use when the user wants to promote, advertise, launch, 宣传, 推广 or 运营 something on X, 小红书 or similar platforms. 社交媒体、发帖、宣伝、プロモーション。
 allowed-tools: skill_read matter_tasks workspace_read workspace_write workspace_search browser_search browser_open browser_read browser_click browser_type browser_press browser_choose browser_upload browser_scroll browser_wait task_report datetime
+version: 1.0.0
 ---
 # Promotion
 

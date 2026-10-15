@@ -2,6 +2,7 @@
 name: pptx
 description: Make or change a PowerPoint deck (.pptx) that opens in PowerPoint and Keynote. Use when the user asks for a PPT, PPTX, Keynote-compatible deck or slides as a file, or to change one slide of such a deck. PPT、PPTX、PowerPoint、幻灯片、演示文稿、パワーポイント、スライド。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
+version: 1.0.0
 ---
 # PPTX decks
 

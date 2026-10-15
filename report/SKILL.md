@@ -2,6 +2,7 @@
 name: report
 description: Research a question on the web and write a report with sources: market or competitor scans, background briefs, fact checks. Use when the user asks for a report, research, 调研 or an overview that needs outside information. 报告、调研、竞品、市场、レポート、調査。
 allowed-tools: skill_read browser_search browser_open browser_read browser_click workspace_read workspace_write
+version: 1.0.0
 ---
 # Research reports
 

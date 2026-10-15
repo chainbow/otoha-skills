@@ -3,6 +3,7 @@ name: slides
 description: Make a presentation as slides on a web page, one file per slide, with a consistent look, charts and speaker-ready layouts, that the app previews, presents full screen and exports to PDF; one slide can be changed without touching the others. Use when the user asks for slides, a deck, a presentation or 演示稿, or to change one slide of such a deck. For an editable PowerPoint file, hand the same content to the pptx skill.
 allowed-tools: skill_read skill_copy skill_run workspace_read workspace_write page_check file_open
 hands-off-to: pptx
+version: 1.0.0
 ---
 # Slides
 

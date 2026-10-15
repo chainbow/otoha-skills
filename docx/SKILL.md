@@ -2,6 +2,7 @@
 name: docx
 description: Make a Word document (.docx) that opens in Word and Pages: reports, minutes, proposals, letters. Use when the user asks for a Word file, a .docx, or a document to send or print. Word 文档、会议纪要、提案、信函、文書、議事録。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
+version: 1.0.0
 ---
 # Word documents
 

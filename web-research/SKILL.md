@@ -2,6 +2,7 @@
 name: web-research
 description: Research a topic on the web by platform (search, news feeds, YouTube and Bilibili transcripts, GitHub, Hacker News, Reddit, sign-in sites), then rank, merge and cite the findings. For what sources said recently, not one quick fact. 网上查资料、调研讨论、视频内容、开源项目。
 allowed-tools: skill_read browser_search browser_open browser_read browser_click browser_scroll browser_wait browser_press browser_type
+version: 1.0.0
 ---
 # Web research
 

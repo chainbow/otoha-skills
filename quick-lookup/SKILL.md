@@ -2,6 +2,7 @@
 name: quick-lookup
 description: Answer a factual question fast from Google's AI answer, then confirm the key facts on a source it cites before answering. Use for prices, opening hours, dates, schedules and other quick facts, especially when what can be read at once is short. 查价格、时间、日期等事实，快速查询。
 allowed-tools: skill_read browser_search browser_open browser_read browser_click
+version: 1.0.0
 ---
 # Quick lookup
 

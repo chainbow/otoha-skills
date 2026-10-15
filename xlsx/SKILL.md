@@ -2,6 +2,7 @@
 name: xlsx
 description: Make an Excel workbook (.xlsx) that opens in Excel and Numbers: tables of data with formats, totals and charts. Use when the user asks for a spreadsheet, an Excel file, a .xlsx or a table to work on. Excel、表格、电子表格、预算、统计、表計算、エクセル。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
+version: 1.0.0
 ---
 # Excel workbooks
 
