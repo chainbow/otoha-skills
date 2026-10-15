@@ -1,27 +1,27 @@
-# Two ways out: PDF and PowerPoint
+# Preview and editable PowerPoint delivery
 
-| | Slides as a web page (this skill) | PowerPoint file (`pptx` skill) |
-| --- | --- | --- |
-| Opens in | the app's preview; full-screen present with the arrow keys | PowerPoint, Keynote |
-| Handed on as | PDF, exact copy of what the preview shows | a .pptx file the recipient can edit |
-| Look | this skill's layouts and the deck's colours and font | the pptx skill's fixed look: white slides, dark text, one indigo accent |
-| Charts | drawn from the data | native charts that stay editable |
-| Retyping | in the preview, text by text | in PowerPoint |
-| Changes later | only the slide that changed is rewritten here | edits made in PowerPoint do not come back here |
+A new presentation starts with content, design and the web preview in this skill. A request for a PPT includes the editable file: check the preview and continue exporting in the same task, without asking the user to choose a format. An explicit later export request continues these steps immediately.
 
-Offer the PDF when someone only needs to read or print it, and the PowerPoint file when the recipient must edit or present it from their own tools. They can have both from the same content.
+## Export the checked deck
 
-## PDF
+1. Build the deck (`scripts/build.mjs`) and check its preview with page_check.
+2. Run this skill's `scripts/to-pptx-outline.mjs` with the deck folder as argument. It writes `<deck folder>/outline.json`, including the effective theme, supported layouts and speaker notes. Read every `NOTE` in the result: these identify simplified pages and font substitutions. Use the slide order to name those pages in the delivery message.
+3. Read the pptx skill with skill_read. If missing from the project, find it with skill_find and add it with skill_add, then continue. This skill declares the handoff; do not stop to ask the user to install it manually.
+4. Run pptx's `scripts/deck.py` with `build --spec <deck folder>/outline.json --out <deck folder>/<name>.pptx`.
+5. Deliver the preview and PPT file paths together. Explain any simplified pages or substituted fonts in everyday words. The export keeps editable text and native charts, using the preview's effective colours, light/dark mode and supported font choice. It maps the layout into PowerPoint elements; it is not a pixel-for-pixel copy. Only claim actual viewing in PowerPoint or Keynote when checked there.
 
-The preview has the export button for PDF and the full-screen present button. Nothing to run. The PDF has one slide per page, as shown.
+The reusable outline and theme contract, including layout mapping and conversion notes, lives in pptx's `references/presentation-handoff.md`. Future presentation-making skills should use that contract too.
 
-## PowerPoint from the same slides
+## Changes after export
 
-1. Build the deck first, so the check has passed (`scripts/build.mjs`).
-2. Run this skill's `scripts/to-pptx-outline.mjs` with the deck folder as argument. It writes `<deck folder>/outline.json` for the pptx skill: cover, section, closing, bullets, two columns, stats, chart, image and quote slides map one to one; speaker notes come along. A slide that fits none of them is simplified to bullets, and the script says which, so look at those after.
-3. Read the pptx skill (skill_read `pptx`) and run its `scripts/deck.py` with `build --spec <deck folder>/outline.json --out <deck folder>/<name>.pptx`.
-4. Tell the user the file's name, and that its look is the PowerPoint skill's own (not the deck's colours and font), and that edits made in PowerPoint stay there.
+The current PPT file becomes the source of truth: the user may already have edited it in PowerPoint or Keynote. For “再改一下第 2 页”, read the current file with pptx's `outline --file`, write one replacement slide object and use `edit --file <deck>.pptx --slide 2 --spec <slide>.json`. Preserve the other pages and the saved PPT theme. Do not rebuild the entire PPT from the web deck or an old outline.
 
-## One slide changed afterwards
+If a user specifically asks to update the web version too, update its matching slide separately. If converting that updated page for the PPT, take only the matching slide object from the new outline and replace just that PPT page; never overwrite the rest. Changes in PowerPoint are not automatically synchronized back to the web files.
 
-Change the slide's file here and build again. If the PowerPoint file already exists and the user may have edited it, do not rebuild it: run the outline script, take that slide's object from `outline.json`, write it to its own file and let the pptx skill's `edit --slide <number>` replace just that slide; the others stay as they are.
+For a global style change, let pptx apply a theme directly to the existing file, without reconstructing the content.
+
+## PDF alternative
+
+The preview's PDF export produces one page per slide, preserving what the preview shows. Offer it when the user needs a visual copy or when a necessary effect cannot remain editable in PPT; explain the limitation before treating PDF as a substitute for a requested PPT. It does not replace the editable export by default.
+
+Mixed pages may have body text alongside a chart, image, key figures or comparison. The current converter keeps the editable layout and moves additional body text into speaker notes, with a conversion note naming the page. Tell the user which pages need that text reviewed before presenting.

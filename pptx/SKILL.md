@@ -1,16 +1,23 @@
 ---
 name: pptx
-description: Make or change a PowerPoint deck (.pptx) that opens in PowerPoint and Keynote. Use when the user asks for a PPT, PPTX, Keynote-compatible deck or slides as a file, or to change one slide of such a deck. PPT、PPTX、PowerPoint、幻灯片、演示文稿、パワーポイント、スライド。
+description: Export an editable PowerPoint file from a finished presentation, or open and modify an existing .ppt/.pptx file for PowerPoint or Keynote. PPT、PPTX、PowerPoint、Keynote、パワーポイント。New creation requests first use a presentation-making skill for content, design and a web preview, then return here for PPT export without asking the user to choose a format.
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
-version: 1.0.0
+hands-off-to: slides
+version: 1.1.0
 ---
-# PPTX decks
+# PPT files
+
+Use this skill for the file: export a finished presentation as an editable PPT, or edit a file the user already has. New presentation requests first use a presentation-making skill, currently slides, for content, design and a checked web preview. Read that skill and continue; if missing, use skill_find and skill_add. A request for a new PPT includes export after preview, without a format question. Return here with its outline. Keep the two skills separate; the shared contract for any presentation-making skill is `references/presentation-handoff.md`.
+
+For an uploaded or previously exported PPT, work directly on the current file. The script edits .pptx; if a legacy .ppt cannot be read, explain that it needs conversion to .pptx and do not pretend it was edited or silently recreate its contents. Its contents, including user changes made in PowerPoint or Keynote, take precedence over an older web deck or outline. Read `references/writing-slides.md` when changing the story, titles or content; do not route an existing file through a new-deck workflow.
 
 Decks are built from an outline by `scripts/deck.py`, run with skill_run. Without a theme, the default look is white slides, dark text and an indigo accent. Native text and charts stay editable. When the user asks for a different style, or another skill supplies design rules, translate those rules into the outline’s theme instead of refusing or keeping the default. The style skill supplies rules; this skill applies them to the file. Preserve facts, slide count and editability.
 
-## Make a deck
+## Export a finished presentation
 
-1. Write the outline with workspace_write, as JSON, next to where the deck goes, for example `发布会/outline.json`:
+Read `references/presentation-handoff.md`. Keep the theme and conversion notes supplied by the presentation-making skill. Do not discard the theme or invent a second design.
+
+1. Use its outline, or write the agreed content and design as an outline with workspace_write, as JSON, next to where the deck goes, for example `发布会/outline.json`:
 
    ```json
    {"title": "让家，更懂你", "slides": [
@@ -20,7 +27,7 @@ Decks are built from an outline by `scripts/deck.py`, run with skill_run. Withou
    ```
 
 2. Run `scripts/deck.py` with the arguments `build --spec 发布会/outline.json --out 发布会/发布会.pptx`.
-3. Tell the user the file's name. If they want to see it, open it with file_open.
+3. Tell the user the file's name and any simplified pages or font substitutions from the handoff. If they want to see it, open it with file_open when that is authorized. Do not claim PowerPoint/Keynote viewing was checked unless it was.
 
 ## Apply a style
 
@@ -30,7 +37,8 @@ Use an optional `theme` next to `title` and `slides` in the outline. For Japanes
 {"theme": {"background": "#F7F5EF", "text": "#28302F", "accent": "#3C706B", "headingFont": "Hiragino Sans", "bodyFont": "sans-serif", "density": "airy"}, "slides": [{"layout": "cover", "title": "减少食品浪费", "subtitle": "从一个品类开始"}]}
 ```
 
-- Colours are exactly six hexadecimal digits, optionally prefixed by `#`. Every themed slide, including covers, chart and video pages, uses the chosen background. Shape fills, accents, chart series and text follow the palette; pictures, movie bytes and supplied posters retain their original colours.
+- `mode` is `light` or `dark`; when omitted, existing theme behaviour is preserved. Choose matching foreground and background colours. `muted`, `line`, `soft` and a `chart` palette (up to five colours) can carry the preview's secondary text, dividers, tinted panels and chart series.
+- Colours are exactly six hexadecimal digits, optionally prefixed by `#`. With an explicit `mode`, cover pages use the accent background and quote pages use the soft tint; other pages use the chosen background. Cover text uses white or dark ink for readability. Themes without `mode` keep the previous uniform-background behaviour. Shape fills, accents, chart series and text follow the palette; pictures, movie bytes and supplied posters retain their original colours.
 - `headingFont` and `bodyFont` each name a supported face: Helvetica Neue, Arial, Aptos, Calibri, Georgia, Times New Roman, Courier New, PingFang SC, Hiragino Sans, Yu Gothic, Noto Sans CJK SC, Noto Sans JP or Noto Serif JP. Prefer faces available on the user's computer. If a guide names another font, use `sans-serif`, `serif` or `monospace` instead; these select Arial/PingFang SC, Georgia/Songti SC or Courier New/PingFang SC. East Asian text always has an explicit CJK face; fonts are not downloaded or embedded.
 - `density` is `compact`, `normal` or `airy`. Airy gives more outer whitespace by fitting content into a smaller footprint; compact uses a larger footprint. Text size and point spacing scale with the footprint; media keep their aspect ratios. Omitted fields keep the default values. Omitting theme altogether preserves the old file and style exactly.
 
@@ -40,7 +48,7 @@ This changes the existing file. If the user asks to keep the original, use `edit
 
 ## Change one slide
 
-1. Run `scripts/deck.py` with `outline --file 发布会/发布会.pptx` to read what each slide holds.
+1. Run `scripts/deck.py` with `outline --file 发布会/发布会.pptx` to read the current file and find the requested page. This also applies after a web presentation was exported: do not rebuild from its old outline.
 2. Write the new slide, one slide object as below, to a file such as `发布会/slide3.json`.
 3. Run `scripts/deck.py` with `edit --file 发布会/发布会.pptx --slide 3 --spec 发布会/slide3.json`. Only that slide changes; the others stay exactly as they are, edits made in PowerPoint or Keynote included.
 

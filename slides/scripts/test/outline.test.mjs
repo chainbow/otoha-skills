@@ -73,3 +73,105 @@ test('the command line writes the outline file next to the deck', () => {
   assert.equal(outline.slides[0].layout, 'cover');
   assert.match(run.stdout, /outline\.json/);
 });
+
+
+for (const mode of ['light', 'dark']) {
+  test(`outline carries resolved ${mode} colours and fonts to PowerPoint`, () => {
+    const { deck } = deckOf([['cover', cover()]], {
+      'deck.json': { title: 'Demo', theme: { mode, accent: '#123456', paper: '#203040', ink: '#fefdfc', font: "'Noto Sans JP', sans-serif", muted: '#abcdef', line: '#456789', accentSoft: '#345678', chart: ['#654321', '#987654'] }, slides: [{ id: 'cover' }] },
+    });
+    const { outline, notes } = outlineOf(deck);
+    assert.deepEqual(outline.theme, { mode, accent: '#123456', background: '#203040', text: '#fefdfc', headingFont: 'Noto Sans JP', bodyFont: 'Noto Sans JP', muted: '#abcdef', line: '#456789', soft: '#345678', chart: ['#654321', '#987654'] });
+    assert.deepEqual(notes, []);
+  });
+}
+
+test('missing theme and dark mode resolve the colours actually used by the preview', () => {
+  for (const [theme, expected] of [[undefined, ['light', '#ffffff', '#0f1115', '#5b57ef']], [{ mode: 'dark' }, ['dark', '#111216', '#e9ebef', '#8481ff']]]) {
+    const { deck } = deckOf([['cover', cover()]], { 'deck.json': { title: 'Demo', ...(theme ? { theme } : {}), slides: [{ id: 'cover' }] } });
+    const actual = outlineOf(deck).outline.theme;
+    assert.deepEqual([actual.mode, actual.background, actual.text, actual.accent], expected);
+    assert.equal(actual.headingFont, 'Helvetica Neue');
+    assert.equal(actual.bodyFont, 'Helvetica Neue');
+  }
+});
+
+test('font stacks choose a supported face or explain a family fallback', () => {
+  for (const [font, face, warned] of [["'Hiragino Sans', sans-serif", 'Hiragino Sans', false], ["'Unknown Face', Georgia, serif", 'Georgia', true], ["'Unknown Serif', serif", 'serif', true], ["'Unknown Mono', monospace", 'monospace', true], ["'Unknown Face'", 'sans-serif', true]]) {
+    const { deck } = deckOf([['cover', cover()]], { 'deck.json': { title: 'Demo', theme: { font }, slides: [{ id: 'cover' }] } });
+    const { outline, notes } = outlineOf(deck);
+    assert.equal(outline.theme.bodyFont, face);
+    assert.equal(outline.theme.headingFont, face);
+    assert.equal(notes.some(note => /font/i.test(note)), warned);
+  }
+});
+
+test('fallback explanations identify the page number and preserve its speaker notes', () => {
+  const { deck } = deckOf([['cover', cover()], ['custom', slide('custom', '', '<h2 data-edit="t">Custom</h2><div><p data-edit="a">A</p><p data-edit="b">B</p></div><aside class="notes" data-edit="n">Remember this</aside>')]]);
+  const { outline, notes } = outlineOf(deck);
+  assert.match(notes[0], /2.*custom.*simplified/);
+  assert.equal(outline.slides[1].notes, 'Remember this');
+});
+
+
+test('three columns cannot silently lose their third column during export', () => {
+  const html = '<h2 data-edit="title">Choices</h2><div class="columns">' + ['A', 'B', 'C'].map((v, i) => `<div><h3 data-edit="h${i}">${v}</h3><ul><li data-edit="v${i}">Option ${v}</li></ul></div>`).join('') + '</div>';
+  const { deck } = deckOf([['choices', slide('choices', '', html)]]);
+  const { outline, notes } = outlineOf(deck);
+  assert.equal(outline.slides[0].layout, 'bullets');
+  assert.deepEqual(outline.slides[0].bullets, ['A', 'Option A', 'B', 'Option B', 'C', 'Option C']);
+  assert.match(notes[0], /1.*choices.*simplified/);
+});
+
+
+test('valid short web colours become six-digit colours accepted by pptx', () => {
+  for (const extra of [{}, { accentSoft: '#abc' }]) {
+    const { deck } = deckOf([['cover', cover()]], { 'deck.json': { title: 'Demo', theme: { accent: '#123', paper: '#fed', ink: '#012', muted: '#456', line: '#789', chart: ['#abc', '#def'], ...extra }, slides: [{ id: 'cover' }] } });
+    const theme = outlineOf(deck).outline.theme;
+    assert.equal(theme.accent, '#112233');
+    assert.equal(theme.background, '#ffeedd');
+    assert.equal(theme.text, '#001122');
+    assert.equal(theme.muted, '#445566');
+    assert.equal(theme.line, '#778899');
+    assert.deepEqual(theme.chart, ['#aabbcc', '#ddeeff']);
+    assert.match(theme.soft, /^#[a-f0-9]{6}$/);
+    if (extra.accentSoft) assert.equal(theme.soft, '#aabbcc');
+  }
+});
+
+
+test('paragraphs in two columns stay editable and never disappear', () => {
+  const { deck } = deckOf([['compare', slide('compare', '', '<h2 data-edit="t">Compare</h2><div class="columns"><div><h3 data-edit="a">A</h3><p data-edit="b">Keep A</p></div><div><h3 data-edit="c">B</h3><p data-edit="d">Keep B</p></div></div>')]]);
+  const { outline } = outlineOf(deck);
+  assert.deepEqual(outline.slides[0].left.bullets, ['Keep A']);
+  assert.deepEqual(outline.slides[0].right.bullets, ['Keep B']);
+});
+
+test('custom inline content survives fallback while speaker notes remain private', () => {
+  const { deck } = deckOf([['custom', slide('custom', '', '<h2 data-edit="t">Custom</h2><div><span data-edit="a">Keep visible text</span></div><aside class="notes"><p data-edit="n">Speaker only</p></aside>')]]);
+  const { outline, notes } = outlineOf(deck);
+  assert.deepEqual(outline.slides[0].bullets, ['Keep visible text']);
+  assert.equal(outline.slides[0].notes, 'Speaker only');
+  assert.match(notes[0], /custom.*simplified/);
+});
+
+
+test('plain lists retain adjacent paragraphs without leaking nested speaker notes', () => {
+  const { deck } = deckOf([['plain', slide('plain', '', '<h2 data-edit="t">Plain</h2><p data-edit="a">Keep context</p><ul><li data-edit="b">Keep item</li></ul><aside class="notes"><ul><li data-edit="n">Speaker only</li></ul></aside>')]]);
+  const { outline } = outlineOf(deck);
+  assert.deepEqual(outline.slides[0].bullets, ['Keep context', 'Keep item']);
+  assert.equal(outline.slides[0].notes, 'Speaker only');
+});
+
+
+test('mixed chart pages explain where extra body text went and retain it in speaker notes', () => {
+  const chart = '{"type":"column","categories":["A"],"series":[{"name":"Count","values":[3]}]}';
+  const { deck } = deckOf([['mixed', slide('mixed', '', `<h2 data-edit="t">Results</h2><p class="lead" data-edit="l">Important context</p><p data-edit="detail">Do not lose this explanation</p><figure class="chart"><script type="application/json">${chart}</script><figcaption data-edit="source">Source</figcaption></figure><aside class="notes" data-edit="n">Original speaker note</aside>`)]]);
+  const { outline, notes } = outlineOf(deck);
+  assert.equal(outline.slides[0].layout, 'chart');
+  assert.equal(outline.slides[0].caption, 'Source');
+  assert.match(outline.slides[0].notes, /Original speaker note/);
+  assert.match(outline.slides[0].notes, /Important context/);
+  assert.match(outline.slides[0].notes, /Do not lose this explanation/);
+  assert.match(notes[0], /1.*mixed.*speaker notes/);
+});

@@ -33,4 +33,5 @@ Write the values you need into `theme` in `deck.json`. All are optional; each is
 - White text sits on the accent on the cover, so the accent must be dark enough: contrast of at least 4.5:1 with white. The build warns when it is not; choose a darker shade of the same hue instead of switching the cover text.
 - Dark mode needs its own values: a dark design usually gives light `ink`, dark `paper`.
 - A font only works if it is on the viewer's machine or in the fallback list; always end the stack with `sans-serif` or `serif`. The deck cannot load fonts from the internet.
+- The editable PPT export carries the effective accent, background, text, secondary-text, divider, panel and chart colours, light/dark mode and a supported font choice. Unsupported font stacks use their generic family; report any substitution named by the export script. Layouts are mapped to editable PPT elements, so spacing and decorative effects can differ. Read `powerpoint.md` for conversion notes.
 - Take values, not the design itself: layouts and spacing stay the deck's.
