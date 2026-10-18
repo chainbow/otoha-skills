@@ -1,12 +1,12 @@
 ---
 name: web-research
 description: Research a topic on the web by platform (search, news feeds, YouTube and Bilibili transcripts, GitHub, Hacker News, Reddit, sign-in sites), then rank, merge and cite the findings. For what sources said recently, not one quick fact. 网上查资料、调研讨论、视频内容、开源项目。
-allowed-tools: skill_read browser_search browser_open browser_read browser_click browser_scroll browser_wait browser_press browser_type
-version: 1.0.0
+allowed-tools: skill_read web_fetch browser_search browser_open browser_read browser_click browser_scroll browser_wait browser_press browser_type
+version: 1.0.1
 ---
 # Web research
 
-Research goes by platform: each kind of source has a way to read it that works best. Everything here goes through the app's browser, which the user sees beside the conversation; nothing is fetched behind their back, and sites they have not allowed ask first.
+Research goes by platform: each kind of source has a way to read it that works best. Everything here goes through the app's browser, which the user sees beside the conversation, or `web_fetch` for public pages when no browser tools are available; nothing is fetched behind their back, and sites they have not allowed ask first.
 
 ## Before searching
 
@@ -19,6 +19,7 @@ Research goes by platform: each kind of source has a way to read it that works b
 ### Web pages and search
 
 - Search with browser_search, then open the pages that look like sources with browser_click or browser_open.
+- When the browser tools are not available, read public pages, feeds and JSON endpoints by address with `web_fetch`, and follow the links it returns; for a page that needs scripts, a sign-in or clicks and has no browser here, say so plainly.
 - A site's text for AI is used when it has one: a page's Markdown version is read in its place, and `https://<site>/llms.txt` lists what the site offers.
 - A long page is read in parts: when browser_read says more follows, read on from where it says.
 
