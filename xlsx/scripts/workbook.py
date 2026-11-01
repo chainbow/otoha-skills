@@ -1,9 +1,12 @@
-"""Builds Excel workbooks (.xlsx) from a JSON description, and reads them back.
+"""Builds Excel workbooks (.xlsx) from a JSON description, changes existing ones, and reads them back.
 
-    python scripts/workbook.py build --spec book.json --out 数据/预约.xlsx
-    python scripts/workbook.py read  --file 数据/预约.xlsx
+    python scripts/workbook.py build   --spec book.json --out 数据/预约.xlsx
+    python scripts/workbook.py read    --file 数据/预约.xlsx
+    python scripts/workbook.py change  --file 原表.xlsx --spec changes.json [--out 交付/新表.xlsx]
+    python scripts/workbook.py inspect --file 交付/新表.xlsx [--sheet 预约] [--range A1:H40]
 
-Paths are relative to the project folder, where the script runs. See the skill's SKILL.md for the sheets.
+Paths are relative to the project folder, where the script runs. See the skill's SKILL.md for the sheets
+and the changes.
 """
 
 import argparse
@@ -18,6 +21,8 @@ import openpyxl
 from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+
+import changes as edits
 
 ACCENT = "5B57EF"
 ACCENT_SOFT = "EEEDFE"
@@ -266,6 +271,57 @@ def read(arguments):
     print(json.dumps(result, ensure_ascii=False))
 
 
+def open_book(name):
+    path = inside_project(name, must_exist=True)
+    if path.suffix.lower() != ".xlsx":
+        raise WorkbookError(f"{name} is not an .xlsx workbook; this script changes .xlsx files only.")
+    try:
+        return path, openpyxl.load_workbook(path)
+    except Exception as error:
+        raise WorkbookError(f"{name} is not an Excel workbook that can be read ({error}).") from error
+
+
+def change(arguments):
+    """Changes an existing workbook and saves it, to --out or in place. Nothing is saved when any change
+    cannot be made, or when saving would drop something the file holds and that was not accepted."""
+    path, book = open_book(arguments.file)
+    out = inside_project(arguments.out) if arguments.out else path
+    if out.suffix.lower() != ".xlsx":
+        raise WorkbookError("--out must end in .xlsx.")
+    spec = read_json(arguments.spec)
+    if not isinstance(spec, dict):
+        raise WorkbookError('the spec is an object like {"changes": [...]}.')
+    lost = edits.losses(path)
+    if lost and spec.get("acceptLosing") is not True:
+        raise WorkbookError(f"{arguments.file} holds {', '.join(lost)}, which saving with this script would drop. "
+                            'Tell the user; only when they agree, run again with "acceptLosing": true in the spec.')
+    try:
+        done = edits.apply(book, spec.get("changes"))
+    except edits.ChangeError as error:
+        raise WorkbookError(str(error)) from error
+    out.parent.mkdir(parents=True, exist_ok=True)
+    replaced(out, book.save)
+    print(json.dumps({"file": arguments.out or arguments.file, "changes": done, **({"lost": lost} if lost else {})}, ensure_ascii=False))
+
+
+def inspect(arguments):
+    path, book = open_book(arguments.file)
+    if arguments.sheet is not None and arguments.sheet not in book.sheetnames:
+        raise WorkbookError(f"there is no sheet {arguments.sheet!r}; the sheets are {', '.join(book.sheetnames)}.")
+    try:
+        result = {"file": arguments.file, **edits.inspect(book, path, arguments.sheet, arguments.range)}
+    except edits.ChangeError as error:
+        raise WorkbookError(str(error)) from error
+    # Too long to pass on whole: the sheet with the most cells gives up cells from its end until it fits.
+    while len(json.dumps(result, ensure_ascii=False, default=str).encode()) > MAX_OUTPUT:
+        longest = max(result["sheets"], key=lambda entry: len(entry["cells"]))
+        if len(longest["cells"]) <= 1:
+            break
+        longest["cells"] = longest["cells"][: len(longest["cells"]) * 3 // 4]
+        longest["truncated"] = f"cells after {longest['cells'][-1]['cell']} left out: read a part with --sheet and --range"
+    print(json.dumps(result, ensure_ascii=False, default=str))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -274,9 +330,17 @@ def main():
     built.add_argument("--out", required=True)
     reading = commands.add_parser("read")
     reading.add_argument("--file", required=True)
+    changed = commands.add_parser("change")
+    changed.add_argument("--file", required=True)
+    changed.add_argument("--spec", required=True)
+    changed.add_argument("--out")
+    looked = commands.add_parser("inspect")
+    looked.add_argument("--file", required=True)
+    looked.add_argument("--sheet")
+    looked.add_argument("--range")
     arguments = parser.parse_args()
     try:
-        {"build": build, "read": read}[arguments.command](arguments)
+        {"build": build, "read": read, "change": change, "inspect": inspect}[arguments.command](arguments)
     except WorkbookError as error:
         print(f"workbook.py: {error}", file=sys.stderr)
         sys.exit(2)

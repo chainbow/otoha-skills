@@ -1,9 +1,13 @@
-"""Builds Word documents (.docx) from a JSON description, and reads their outline back.
+"""Builds Word documents (.docx) from a JSON description, changes the formatting of existing ones, and
+reads them back.
 
     python scripts/document.py build   --spec doc.json --out 报告/报告.docx
     python scripts/document.py outline --file 报告/报告.docx
+    python scripts/document.py change  --file 原稿.docx --spec changes.json [--out 交付/定稿.docx]
+    python scripts/document.py inspect --file 交付/定稿.docx [--paragraphs 1-80]
 
-Paths are relative to the project folder, where the script runs. See the skill's SKILL.md for the blocks.
+Paths are relative to the project folder, where the script runs. See the skill's SKILL.md for the blocks
+and the changes.
 """
 
 import argparse
@@ -19,6 +23,8 @@ from docx.enum.text import WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
+
+import changes as edits
 
 INK = RGBColor(0x0F, 0x11, 0x15)
 MUTED = RGBColor(0x5D, 0x64, 0x71)
@@ -277,6 +283,55 @@ def outline(arguments):
     print(json.dumps({"file": arguments.file, "title": document.core_properties.title, "headings": headings, "tables": len(document.tables), "characters": words}, ensure_ascii=False))
 
 
+# The app keeps 64 KiB of what a script prints; what inspect prints stays under it.
+MAX_OUTPUT = 60_000
+
+
+def open_document(name):
+    path = inside_project(name, must_exist=True)
+    try:
+        return docx.Document(path)
+    except Exception as error:
+        raise DocumentError(f"{name} is not a Word document that can be read ({error}).") from error
+
+
+def change(arguments):
+    """Changes an existing document's formatting and saves it, to --out or in place. Nothing is saved
+    when any change cannot be made."""
+    document = open_document(arguments.file)
+    out = inside_project(arguments.out) if arguments.out else inside_project(arguments.file)
+    if out.suffix.lower() != ".docx":
+        raise DocumentError("--out must end in .docx.")
+    spec = read_json(arguments.spec)
+    try:
+        done = edits.apply(document, spec.get("changes") if isinstance(spec, dict) else spec)
+    except edits.ChangeError as error:
+        raise DocumentError(str(error)) from error
+    out.parent.mkdir(parents=True, exist_ok=True)
+    replaced(out, document.save)
+    print(json.dumps({"file": arguments.out or arguments.file, "changes": done}, ensure_ascii=False))
+
+
+def inspect(arguments):
+    document = open_document(arguments.file)
+    first = last = None
+    if arguments.paragraphs:
+        try:
+            numbers = edits.numbers_of(arguments.paragraphs, "--paragraphs")
+        except edits.ChangeError as error:
+            raise DocumentError(str(error)) from error
+        first, last = min(numbers), max(numbers)
+    report = {"file": arguments.file, **edits.inspect(document, first, last)}
+    # Too long to pass on whole: paragraphs give way from the end, and say how to read the rest.
+    while len(json.dumps(report, ensure_ascii=False).encode()) > MAX_OUTPUT and len(report["paragraphs"]) > 1:
+        kept = report["paragraphs"][: len(report["paragraphs"]) * 3 // 4]
+        report["paragraphs"] = kept
+        report["truncated"] = f"paragraphs after {kept[-1]['n']} left out: read them with --paragraphs {kept[-1]['n'] + 1}-{kept[-1]['n'] + 80}"
+    if len(json.dumps(report, ensure_ascii=False).encode()) > MAX_OUTPUT:
+        report["textFormats"] = report["textFormats"][:40]
+    print(json.dumps(report, ensure_ascii=False))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -285,9 +340,16 @@ def main():
     built.add_argument("--out", required=True)
     read = commands.add_parser("outline")
     read.add_argument("--file", required=True)
+    changed = commands.add_parser("change")
+    changed.add_argument("--file", required=True)
+    changed.add_argument("--spec", required=True)
+    changed.add_argument("--out")
+    looked = commands.add_parser("inspect")
+    looked.add_argument("--file", required=True)
+    looked.add_argument("--paragraphs")
     arguments = parser.parse_args()
     try:
-        {"build": build, "outline": outline}[arguments.command](arguments)
+        {"build": build, "outline": outline, "change": change, "inspect": inspect}[arguments.command](arguments)
     except DocumentError as error:
         print(f"document.py: {error}", file=sys.stderr)
         sys.exit(2)

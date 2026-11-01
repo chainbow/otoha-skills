@@ -31,5 +31,6 @@ Keep existing speaker notes. When adding a presentation script, use the slide ob
 - Inspect the current file with `outline --file` first; do not assume an old source outline still matches user edits.
 - For a single page's words, layout or chart, replace that page only with `edit --slide`; preserve all other pages.
 - For a new look, apply a theme directly to the file without rebuilding its content.
+- For fonts, links, animations, media, transitions or slide order, use `inspect` and `change` (`../SKILL.md`); do not replace the page for these.
 - Feedback by position ("第 3 页"): use the order in the current PPT file, starting at 1.
 - Preserve facts, slide count, media and editability unless the user asks to change them. If a request conflicts with those limits, explain the specific tradeoff.

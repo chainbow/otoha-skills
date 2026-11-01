@@ -4,10 +4,14 @@
     python scripts/deck.py edit    --file 演示/deck.pptx --slide 3 --spec slide.json
     python scripts/deck.py edit    --file 演示/deck.pptx --spec theme.json [--out 演示/styled.pptx]
     python scripts/deck.py outline --file 演示/deck.pptx
+    python scripts/deck.py change  --file 演示/deck.pptx --spec changes.json [--out 交付/deck.pptx]
+    python scripts/deck.py inspect --file 演示/deck.pptx [--slide 3]
 
 Paths are relative to the project folder, where the script runs. `edit` replaces one slide's content
 and leaves every other slide exactly as it was, including changes made to them in PowerPoint or Keynote.
-A spec containing only theme restyles the whole deck without replacing its contents.
+A spec containing only theme restyles the whole deck without replacing its contents. `change` edits
+what is already there (text formatting, links, animations, media, transitions, slide order) from a list
+of changes, and `inspect` reads all of that back.
 See the skill's SKILL.md for the outline's layouts.
 """
 
@@ -33,6 +37,7 @@ from pptx.oxml.ns import nsdecls, qn
 from pptx.util import Emu, Pt
 from PIL import Image, ImageDraw
 
+import changes as edits
 import theme as deck_theme
 
 # The look of the app ("精密工作台"): quiet ink on white, one indigo accent.
@@ -550,6 +555,35 @@ def outline(arguments):
     print(json.dumps(result, ensure_ascii=False))
 
 
+def change(arguments):
+    """Applies a list of changes to an existing deck and saves it, to --out or in place. Nothing is saved
+    when any change cannot be made."""
+    deck = open_deck(arguments.file)
+    out = inside_project(arguments.out) if arguments.out else inside_project(arguments.file)
+    if out.suffix.lower() != ".pptx":
+        raise OutlineError("--out must end in .pptx.")
+    spec = read_json(arguments.spec)
+    try:
+        done = edits.apply(deck, spec.get("changes") if isinstance(spec, dict) else spec,
+                           lambda name: inside_project(name, must_exist=True), video_poster)
+    except edits.ChangeError as error:
+        raise OutlineError(str(error)) from error
+    out.parent.mkdir(parents=True, exist_ok=True)
+    saved(deck, out)
+    print(json.dumps({"file": arguments.out or arguments.file, "changes": done}, ensure_ascii=False))
+
+
+def inspect(arguments):
+    deck = open_deck(arguments.file)
+    if arguments.slide is not None and not 1 <= arguments.slide <= len(deck.slides):
+        raise OutlineError(f"the deck has slides 1 to {len(deck.slides)}; there is no slide {arguments.slide}.")
+    result = {"file": arguments.file, **edits.inspect(deck, arguments.slide)}
+    while len(json.dumps(result, ensure_ascii=False).encode()) > MAX_OUTPUT and len(result["slides"]) > 1:
+        result["slides"] = result["slides"][:-1]
+        result["truncated"] = f"slides after {result['slides'][-1]['slide']} left out: read them one at a time with --slide"
+    print(json.dumps(result, ensure_ascii=False))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -563,10 +597,17 @@ def main():
     edited.add_argument("--out")
     read = commands.add_parser("outline")
     read.add_argument("--file", required=True)
+    changed = commands.add_parser("change")
+    changed.add_argument("--file", required=True)
+    changed.add_argument("--spec", required=True)
+    changed.add_argument("--out")
+    looked = commands.add_parser("inspect")
+    looked.add_argument("--file", required=True)
+    looked.add_argument("--slide", type=int)
     arguments = parser.parse_args()
     try:
-        {"build": build, "edit": edit, "outline": outline}[arguments.command](arguments)
-    except (OutlineError, deck_theme.ThemeError) as error:
+        {"build": build, "edit": edit, "outline": outline, "change": change, "inspect": inspect}[arguments.command](arguments)
+    except (OutlineError, deck_theme.ThemeError, edits.ChangeError) as error:
         print(f"deck.py: {error}", file=sys.stderr)
         sys.exit(2)
     except (TypeError, ValueError, KeyError, AttributeError, OSError) as error:

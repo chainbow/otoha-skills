@@ -1,15 +1,22 @@
 ---
 name: pptx
-description: Export an editable PowerPoint file from a finished presentation, or open and modify an existing .ppt/.pptx file for PowerPoint or Keynote. PPT、PPTX、PowerPoint、Keynote、パワーポイント。New creation requests first use a presentation-making skill for content, design and a web preview, then return here for PPT export without asking the user to choose a format.
+description: Export an editable PowerPoint from a finished presentation, or change a given .pptx: text, links, animations, media, transitions, slide order. PPT、PPTX、Keynote、动画、パワーポイント。New decks first use a presentation-making skill for content, design and preview, then return to export without a format question.
+metadata:
+  otoha-title-zh: PPT 文件
+  otoha-title-en: PowerPoint files
+  otoha-title-ja: PowerPoint ファイル
+  otoha-summary-zh: 把做好的演示稿导出成可以编辑的 PPT，或修改你给的 PPT。
+  otoha-summary-en: "Turns a finished presentation into an editable PowerPoint file, or changes one you give."
+  otoha-summary-ja: 仕上がったプレゼンを編集できる PowerPoint に書き出したり、渡されたファイルを直したりします。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
 hands-off-to: slides
-version: 1.1.0
+version: 1.2.0
 ---
 # PPT files
 
 Use this skill for the file: export a finished presentation as an editable PPT, or edit a file the user already has. New presentation requests first use a presentation-making skill, currently slides, for content, design and a checked web preview. Read that skill and continue; if missing, use skill_find and skill_add. A request for a new PPT includes export after preview, without a format question. Return here with its outline. Keep the two skills separate; the shared contract for any presentation-making skill is `references/presentation-handoff.md`.
 
-For an uploaded or previously exported PPT, work directly on the current file. The script edits .pptx; if a legacy .ppt cannot be read, explain that it needs conversion to .pptx and do not pretend it was edited or silently recreate its contents. Its contents, including user changes made in PowerPoint or Keynote, take precedence over an older web deck or outline. Read `references/writing-slides.md` when changing the story, titles or content; do not route an existing file through a new-deck workflow.
+For an uploaded or previously exported PPT, work directly on the current file. The script edits .pptx; if a legacy .ppt cannot be read, explain that it needs conversion to .pptx and do not pretend it was edited or silently recreate its contents. Its contents, including user changes made in PowerPoint or Keynote, take precedence over an older web deck or outline. Read `references/writing-slides.md` when changing the story, titles or content; do not route an existing file through a new-deck workflow. Formatting, links, animations, media, transitions and slide order change with `change`; a new look for the whole deck with a theme-only `edit`; one page's content with `edit --slide`. Each is described below.
 
 Decks are built from an outline by `scripts/deck.py`, run with skill_run. Without a theme, the default look is white slides, dark text and an indigo accent. Native text and charts stay editable. When the user asks for a different style, or another skill supplies design rules, translate those rules into the outline’s theme instead of refusing or keeping the default. The style skill supplies rules; this skill applies them to the file. Preserve facts, slide count and editability.
 
@@ -52,7 +59,41 @@ This changes the existing file. If the user asks to keep the original, use `edit
 2. Write the new slide, one slide object as below, to a file such as `发布会/slide3.json`.
 3. Run `scripts/deck.py` with `edit --file 发布会/发布会.pptx --slide 3 --spec 发布会/slide3.json`. Only that slide changes; the others stay exactly as they are, edits made in PowerPoint or Keynote included.
 
-## Put an animation on a chosen slide
+## Change formatting, links, animations, media and transitions
+
+For requests about what is already in a deck, use `change`; it keeps every slide's content, layout and the user's edits, and changes only what is named. Do not rebuild the deck or edit its XML by hand.
+
+1. Run `scripts/deck.py` with `inspect --file 发布会/发布会.pptx` (or `--slide 3`). It lists each slide's shapes by number with name, placeholder, position, text, fonts and links, and the slide's transition, animations in playing order, and media.
+2. Write the changes with workspace_write, for example `发布会/changes.json`:
+
+   ```json
+   {"changes": [
+     {"slide": 1, "shape": {"placeholder": "title"}, "font": {"eastAsia": "黑体", "latin": "Arial", "size": 40, "bold": true}, "paragraph": {"align": "center"}},
+     {"slide": 2, "shape": {"placeholder": "body"}, "only": "第三部分", "hyperlink": {"slide": 6}},
+     {"slide": 2, "shape": {"placeholder": "title"}, "animation": {"effect": "fade", "start": "click"}},
+     {"slide": 2, "shape": {"placeholder": "body"}, "animation": {"effect": "fly-in", "direction": "left", "start": "after-previous", "delay": 0.5}},
+     {"slide": 1, "insert": "media", "path": "发布会/bgm.mp3", "start": "auto", "loop": true, "acrossSlides": true, "hidden": true},
+     {"slide": "all", "transition": {"type": "fade", "duration": 0.7}}
+   ]}
+   ```
+
+3. Run `change --file 发布会/发布会.pptx --spec 发布会/changes.json`, adding `--out 交付/发布会.pptx` to keep the original. Changes apply in order; if one cannot be made, nothing is saved and the message names it.
+4. Run `inspect` on the result and check each requirement against it. Playback itself, such as timing as seen in a slideshow, still needs the file opened in PowerPoint or Keynote; say so when it was not.
+
+Each change names `slide` (a number from 1, a list, a range like `"2-5"`, or `"all"`), except `{"move": 5, "to": 2}`, which moves a slide; later changes count slides in the new order. Then:
+
+- `shape`: its number from inspect, its name, or `{"placeholder": "title" | "subtitle" | "body" | …}`, `{"contains": "…"}`, `{"id": 4}`. With it:
+  - `font`: `name` (both faces), `latin`, `eastAsia`, `size` (points or a Chinese named size such as `"小四"`), `bold`, `italic`, `underline`, `strike`, `color`. Chinese text uses `eastAsia`, so set it whenever a Chinese font is asked for.
+  - `paragraph`: `align` (left, center, right, justify, distribute), `lineSpacing` (1.2, or `"28pt"`), `spaceBefore`, `spaceAfter`.
+  - `only`: the text inside the shape that the font or link applies to; the rest is left alone.
+  - `hyperlink`: `{"url": "https://…"}`, `{"slide": 4}`, `{"action": "next" | "previous" | "first" | "last" | "end"}`, or `null` to remove it. It goes on the text, or on the whole shape when the shape has no text or `"on": "shape"` is given.
+  - `animation`: one effect or a list, added after the slide's existing ones. `type` is `entrance` (the default; effects `appear`, `fade`, `fly-in`, `wipe`, `zoom`), `emphasis` (`spin`, `grow` with `scale`) or `exit` (`disappear`, `fade`, `fly-out`, `wipe`, `zoom`). `start` is `click`, `with-previous` or `after-previous`; `delay` and `duration` are seconds; `direction` (left, right, top, bottom: where it comes from) is for fly and wipe; `repeat` counts plays. The order of the changes is the playing order.
+  - `position`: `left`, `top`, `width`, `height`, such as `"2cm"`.
+- `"animations": "clear"` removes the slide's animation sequence, media starts included, before new effects are added.
+- `transition`: `{"type": "fade" | "push" | "wipe" | "split" | "cover" | "pull" | "cut" | "dissolve" | "zoom" | …, "direction": "right", "duration": 0.7, "advanceOnClick": true, "advanceAfter": 5}`, or `"none"`. `direction`, where the next slide comes from, applies to push, wipe, cover and pull.
+- `"insert": "media"` with `path` (MP3, WAV, M4A sounds; MP4, MOV videos), optional `position` and, for video, `poster`. `start` is `on-media-click` (the default, when its icon or frame is clicked), `click` (the next click in the sequence), `with-previous`, `after-previous` or `auto` (by itself, after the previous effect), with `delay`. Sounds also take `loop`, `acrossSlides` (keeps playing on later slides) and `hidden` (no icon in the slideshow).
+
+## Put an animated video or GIF on a chosen slide
 
 1. Have the animation skill (for example HyperFrames or huashu-art-motion) export an MP4 or animated GIF into this project's folder, such as `发布会/demo.mp4`. Use the finished file, not a link to it. For broad playback compatibility, ask for H.264 video in an MP4; embedding does not convert codecs.
 2. Read the deck's outline, then write one slide object to `发布会/slide3.json`. For video:
@@ -78,7 +119,7 @@ Every slide has `layout` and `title`; `notes` (speaker notes) is optional.
 - `stats`: `stats`, 1 to 4 of `{"value": "0.3 秒", "label": "唤醒"}`.
 - `chart`: `chart` = `{"type": "column" | "bar" | "line" | "pie" | "stacked", "categories": ["Q1", "Q2"], "series": [{"name": "销量", "values": [120, 180]}]}`, and an optional `caption` naming the data's source. Each series has one value per category.
 - `image`: `image`, a PNG, JPEG or GIF in the project (animated GIFs keep their frames); optional `caption`.
-- `video`: `video`, an MP4 in the project; optional `poster`, `aspectRatio` (for the drawn fallback poster, between 0.01 and 100) and `caption`. See the animation steps above.
+- `video`: `video`, an MP4 in the project; optional `poster`, `aspectRatio` (for the drawn fallback poster, between 0.01 and 100) and `caption`. See the animated video steps above.
 - `quote`: the `title` is the quote; `subtitle` names who said it.
 - `closing`: `subtitle`. The last slide.
 

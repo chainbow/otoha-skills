@@ -6,7 +6,7 @@ This is the shared contract for any skill that creates presentation content, des
 
 - A new presentation, including “新建一个 PPT”, “Create a PPT” or “PPT を新規作成”: use a presentation-making skill first, currently slides. Build and check its web preview. When the request includes PPT, continue exporting in the same task; do not wait for a separate format choice or export confirmation unless the user explicitly requested a review first.
 - “导出 PPT”, “Export PPT” or “PPT に書き出して” for a finished presentation: use its content and design to export now.
-- An uploaded or already exported PPT: inspect and edit the current file directly here. A page change replaces only that page; a global style change applies a theme without rebuilding its content. Preserve user edits in the other pages.
+- An uploaded or already exported PPT: inspect and edit the current file directly here. A page change replaces only that page; a global style change applies a theme without rebuilding its content; formatting, links, animations, media, transitions and slide order change with `change`. Preserve user edits in the other pages.
 
 The making skill declares `hands-off-to: pptx` in its front matter. Read this skill with skill_read; if it is missing from the project, find it with skill_find and add it with skill_add, then continue. Do not ask the user to perform the handoff manually.
 
@@ -84,7 +84,7 @@ Review the export notes and tell the user which pages were simplified and which 
 
 ## Continue editing the delivered file
 
-After export, the current PPT is authoritative. Inspect it with `outline --file <name>.pptx` before editing. For a page change, write one slide object and run `edit --file <name>.pptx --slide <number> --spec <slide>.json`. The saved PPT theme is reused. Do not rebuild the full file from the old preview or outline. For a global style change, pass a spec containing only `theme` to `edit` without `--slide`.
+After export, the current PPT is authoritative. Inspect it with `outline --file <name>.pptx` before editing. For a page change, write one slide object and run `edit --file <name>.pptx --slide <number> --spec <slide>.json`. The saved PPT theme is reused. Do not rebuild the full file from the old preview or outline. For a global style change, pass a spec containing only `theme` to `edit` without `--slide`. For fonts, links, animations, media, transitions or slide order, read the file with `inspect` and apply a list of changes with `change`, as `SKILL.md` describes; the slides' content stays as it is.
 
 Inspect the produced file for slide count, titles, theme and editable content. Record whether actual viewing in PowerPoint/Keynote was checked; if those apps could not be used, say that visual viewing remains pending. A successful export is not proof of visual layout or media playback in those apps.
 
