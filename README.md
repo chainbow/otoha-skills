@@ -8,9 +8,9 @@ Each skill is a folder with a `SKILL.md` and its own files. Each skill works on 
 | --- | --- |
 | `design` | Posters, interface and web drafts, infographics, diagrams and prototypes as HTML, previewed beside the conversation |
 | `slides` | Presentations as HTML slides, one file per slide, presented full screen and exported to PDF; editable PowerPoint through the `pptx` skill |
-| `pptx` | Editable PowerPoint decks (`.pptx`) that open in PowerPoint and Keynote |
-| `docx` | Word documents (`.docx`) that open in Word and Pages |
-| `xlsx` | Excel workbooks (`.xlsx`) with formatted tables, formulas and charts |
+| `pptx` | Editable PowerPoint decks (`.pptx`) that open in PowerPoint and Keynote; changes a given deck instead of rebuilding it |
+| `docx` | Word documents (`.docx`) that open in Word and Pages; changes a given document instead of rebuilding it |
+| `xlsx` | Excel workbooks (`.xlsx`) with formatted tables, formulas and charts; changes a given workbook instead of rebuilding it |
 | `report` | Web research reports with numbered sources |
 | `web-research` | Multi-platform web research (search, feeds, transcripts, GitHub, forums) |
 | `quick-lookup` | Fast fact checks confirmed against cited sources |
