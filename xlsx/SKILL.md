@@ -9,7 +9,7 @@ metadata:
   otoha-summary-en: "Makes Excel spreadsheets with formatting, totals and charts, or changes one you give."
   otoha-summary-ja: 書式・合計・グラフつきの Excel 表を作ったり、渡された表を直したりします。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
-version: 1.1.0
+version: 1.1.1
 ---
 # Excel workbooks
 
@@ -17,7 +17,7 @@ Workbooks are built from a description by `scripts/workbook.py`, run with skill_
 
 ## Make a workbook
 
-1. Write the description with workspace_write, as JSON, for example `数据/book.json`:
+1. Write the description with workspace_write, as JSON, for example `.tmp/数据/book.json`. Working files such as this one go in the project's `.tmp/` folder, never beside the result: the folder the user gets holds only what they asked for.
 
    ```json
    {"sheets": [{
@@ -29,15 +29,15 @@ Workbooks are built from a description by `scripts/workbook.py`, run with skill_
    }]}
    ```
 
-2. Run `scripts/workbook.py` with `build --spec 数据/book.json --out 数据/预约.xlsx`.
+2. Run `scripts/workbook.py` with `build --spec .tmp/数据/book.json --out 数据/预约.xlsx`.
 3. Tell the user the file's name; open it with file_open if they want to see it.
 
-To see what a workbook holds, the user's own included, run `scripts/workbook.py` with `read --file 数据/预约.xlsx`. To change a workbook you made, change its description and build it again. To change a workbook the user gave, change that file, as below; do not rebuild it.
+To see what a workbook holds, the user's own included, run `scripts/workbook.py` with `read --file 数据/预约.xlsx`. To change a workbook you made, change its description in `.tmp/` and build it again; if the description is no longer there, read the workbook with `read` and write it again first. To change a workbook the user gave, change that file, as below; do not rebuild it.
 
 ## Change an existing workbook
 
 1. Run `inspect --file 原表.xlsx`, adding `--sheet 预约` and `--range A1:H40` for a part. It shows each cell's value or formula, number format, font, fill, alignment and borders, and each sheet's widths, frozen panes, merged cells, filters, conditional formats, charts, validation and protection.
-2. Write the changes with workspace_write, for example `changes.json`:
+2. Write the changes with workspace_write, in `.tmp/` too, for example `.tmp/数据/changes.json`:
 
    ```json
    {"changes": [
@@ -50,7 +50,7 @@ To see what a workbook holds, the user's own included, run `scripts/workbook.py`
    ]}
    ```
 
-3. Run `change --file 原表.xlsx --spec changes.json --out 交付/新表.xlsx`; without `--out` the file changes in place. Changes apply in order; if one cannot be made, nothing is saved and the message names it.
+3. Run `change --file 原表.xlsx --spec .tmp/数据/changes.json --out 交付/新表.xlsx`; without `--out` the file changes in place. Changes apply in order; if one cannot be made, nothing is saved and the message names it.
 4. Run `inspect` on the result and check each requirement against it.
 
 Each change names `sheet`, then any of:

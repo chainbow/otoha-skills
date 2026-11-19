@@ -9,7 +9,7 @@ metadata:
   otoha-summary-en: "Makes new Word documents, or changes the fonts, spacing, tables and page layout of one you give."
   otoha-summary-ja: Word 文書を新しく作ったり、渡された文書のフォント・段落・表・ページ設定を整えたりします。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
-version: 1.1.0
+version: 1.1.1
 ---
 # Word documents
 
@@ -19,7 +19,7 @@ When the user gives a document, change that file with `change` (below). Do not r
 
 ## Make a document
 
-1. Write the description with workspace_write, as JSON, for example `复盘/doc.json`:
+1. Write the description with workspace_write, as JSON, for example `.tmp/复盘/doc.json`. Working files such as this one go in the project's `.tmp/` folder, never beside the result: the folder the user gets holds only what they asked for.
 
    ```json
    {"title": "Q4 发布会复盘", "subtitle": "2026 年 11 月", "blocks": [
@@ -28,10 +28,10 @@ When the user gives a document, change that file with `change` (below). Do not r
    ]}
    ```
 
-2. Run `scripts/document.py` with `build --spec 复盘/doc.json --out 复盘/复盘.docx`.
+2. Run `scripts/document.py` with `build --spec .tmp/复盘/doc.json --out 复盘/复盘.docx`.
 3. Tell the user the file's name; open it with file_open if they want to see it.
 
-To change a document you made, change its description and build it again. To see what an existing document holds, run `scripts/document.py` with `outline --file 复盘/复盘.docx`.
+To change a document you made, change its description in `.tmp/` and build it again; if the description is no longer there, read the document with `outline` and write it again first. To see what an existing document holds, run `scripts/document.py` with `outline --file 复盘/复盘.docx`.
 
 ## Blocks
 
@@ -46,7 +46,7 @@ To change a document you made, change its description and build it again. To see
 ## Change an existing document
 
 1. Read its formatting: `inspect --file 原稿.docx` (add `--paragraphs 81-160` for later parts of a long file). Paragraphs are numbered `n`, table paragraphs included; `textFormats` counts the text in each font and size.
-2. Write the changes as JSON with workspace_write, for example `changes.json`:
+2. Write the changes as JSON with workspace_write, in `.tmp/` too, for example `.tmp/复盘/changes.json`:
 
    ```json
    {"changes": [
@@ -58,7 +58,7 @@ To change a document you made, change its description and build it again. To see
    ]}
    ```
 
-3. Run `change --file 原稿.docx --spec changes.json --out 交付/定稿.docx`. Without `--out` the file changes in place. Changes apply in order. If one cannot be made, for example it matches no paragraph, nothing is saved and the message names it.
+3. Run `change --file 原稿.docx --spec .tmp/复盘/changes.json --out 交付/定稿.docx`. Without `--out` the file changes in place. Changes apply in order. If one cannot be made, for example it matches no paragraph, nothing is saved and the message names it.
 4. Run `inspect` on the result and check each requirement against it, one at a time. Say which ones need the page to be seen, such as page count or where pages break.
 
 Each change names one target:
