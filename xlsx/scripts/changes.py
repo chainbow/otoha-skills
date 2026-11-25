@@ -546,7 +546,11 @@ def cell_report(cell):
     shown = {k: v for k, v in (("horizontal", align.horizontal), ("vertical", align.vertical), ("wrap", align.wrap_text or None)) if v}
     if shown:
         report["align"] = shown
-    borders = {edge: getattr(cell.border, edge).style for edge in ("left", "right", "top", "bottom") if getattr(cell.border, edge).style}
+    borders = {
+        edge: side.style
+        for edge in ("left", "right", "top", "bottom")
+        if (side := getattr(cell.border, edge)) is not None and side.style
+    }
     if borders:
         report["border"] = borders
     if cell.protection.locked is False:

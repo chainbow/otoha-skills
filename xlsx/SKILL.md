@@ -9,7 +9,7 @@ metadata:
   otoha-summary-en: "Makes Excel spreadsheets with formatting, totals and charts, or changes one you give."
   otoha-summary-ja: 書式・合計・グラフつきの Excel 表を作ったり、渡された表を直したりします。
 allowed-tools: skill_read skill_run workspace_read workspace_write file_open
-version: 1.1.1
+version: 1.1.2
 ---
 # Excel workbooks
 
